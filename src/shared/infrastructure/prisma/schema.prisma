@@ -1,0 +1,255 @@
+datasource db {
+  url               = env("DATABASE_URL")
+  provider          = "postgresql"
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialActions"]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  usuario_id             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  oauth_token_secret String?
+  oauth_token        String?
+  user               User @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  usuario_id   String
+  expires      DateTime
+  user         User     @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  usuario_id             String          @id@default(cuid())
+  name                   String?
+  password               String
+  email                  String?   @unique
+  emailVerified          DateTime?
+  image                  String?
+  idioma                 Idioma       @relation(fields:[idioma_id],references:[idioma_id], onDelete: Cascade)
+  idioma_id              Int
+  genero                 Genero       @relation(fields:[genero_id],references:[genero_id], onDelete: Cascade)
+  genero_id              Int
+  clientes               Clientes[]
+  accounts               Account[]
+  sessions               Session[]
+}
+
+
+
+model Genero{
+  genero_id             Int           @id@default(autoincrement())
+  genero_nombre         String @unique
+  usuarios              User[]
+}
+
+model Idioma{
+  idioma_id              Int          @id@default(autoincrement())
+  idioma_nombre          String
+  idioma_clave           String   @unique
+  usuarios               User[]
+  comprobantes          Comprobantes[]
+  condiciondepago       Condiciondepago[]
+
+}
+
+model Monedas{
+  moneda_id                 Int     @id@default(autoincrement())
+  moneda_clave              String? @unique
+  moneda_nombre             String? @unique
+  moneda_nombre_singular    String?
+  moneda_nombre_plural      String?
+  moneda_denominacion       String?
+  moneda_simbolo            String?
+  moneda_decimales          String
+  moneda_porcentaje_variacion String
+  clientes                  Clientes[]
+  Comprobantes          Comprobantes[]
+  Movimientos           Movimientos[]
+
+}
+
+model Clientes{
+  operacion_id         String          @id@default(cuid())
+  usuario              User         @relation(fields:[usuario_id],references:[usuario_id], onDelete: Cascade)
+  usuario_id           String
+  cliente              String       
+  emisor               Emisores     @relation(fields:[emisor_id],references:[emisor_id], onDelete: Cascade)
+  emisor_id            Int
+  montorecibido        Float
+  moneda               Monedas      @relation(fields:[moneda_id],references:[moneda_id], onDelete: Cascade)
+  moneda_id            Int
+  tipodecambio         Float
+  formadepago          Formasdepago @relation(fields:[forma_pago_id],references:[forma_pago_id], onDelete: Cascade)
+  forma_pago_id        Int
+  fecha                String
+  status               Status       @relation(fields:[status_id],references:[status_id], onDelete: Cascade)
+  status_id            Int
+  numeroperacion       String
+  anexoclientesfondos  Anexoclientesfondos[]
+  anexoclientespagos   Anexoclientespagos[]
+  comprobantes         Comprobantes[]
+}
+
+
+model Formasdepago{
+  forma_pago_id         Int         @id@default(autoincrement())
+  forma_clave           String  @unique
+  forma_tipo            String
+  clientes              Clientes[]
+  Comprobantes          Comprobantes[]
+  Movimientos           Movimientos[]
+}
+
+model Status{
+  status_id             Int         @id@default(autoincrement())
+  status_tipo           String   @unique
+  clientes              Clientes[]
+  Comprobantes          Comprobantes[]
+  Movimientos           Movimientos[]
+}
+
+model Cfdi{
+  cfdi_id               Int @id@default(autoincrement())
+  cfdi_clave            String @unique
+  cfdi_descripcion      String
+  Comprobantes          Comprobantes[]
+}
+
+model Regimen{
+  regimen_id            Int @id@default(autoincrement())
+  regimen_tipo          String @unique
+  Comprobantes          Comprobantes[]
+}
+
+model Metododepago{
+  metodopago_id         Int @id@default(autoincrement())
+  metodopago_clave      String  @unique
+  metodopago_tipo       String
+  Comprobantes          Comprobantes[]
+
+}
+
+model Tipodecomprobante{
+  tipocomprobante_id          Int @id@default(autoincrement())
+  tipocomprobante_clave       String @unique
+  tipocomprobante_descripcion String
+  Comprobantes          Comprobantes[]
+
+}
+
+model Emisores{
+  emisor_id       Int @id@default(autoincrement())
+  emisor_nombre   String @unique
+  Comprobantes          Comprobantes[]
+  Movimientos           Movimientos[]
+  clientes          Clientes[]
+}
+
+model Receptores{
+    receptor_id           Int @default(autoincrement())@id
+    receptor_nombre       String @unique
+    Comprobantes          Comprobantes[]
+
+}
+
+model Comprobantes{
+  comprobante_id               Int @id@default(autoincrement())
+  comprobante_folio            String
+  emisor                       Emisores @relation(fields:[emisor_id],references:[emisor_id], onDelete: Cascade)
+  emisor_id                    Int
+  receptor                     Receptores @relation(fields:[receptor_id],references:[receptor_id], onDelete: Cascade)
+  receptor_id                  Int  
+  pago                         Float
+  status_comprobante_pago      Status @relation(fields:[status_comprobante_pago_id],references:[status_id], onDelete: Cascade)
+  status_comprobante_pago_id   Int
+  tipo_comprobante             Tipodecomprobante @relation(fields:[tipo_comprobante_id],references:[tipocomprobante_id], onDelete: Cascade)
+  tipo_comprobante_id          Int
+  moneda                       Monedas @relation(fields:[moneda_id],references:[moneda_id], onDelete: Cascade)
+  moneda_id                    Int
+  idioma                       Idioma@relation(fields:[idioma_id],references:[idioma_id], onDelete: Cascade)
+  idioma_id                    Int
+  metodo_pago                  Metododepago @relation(fields:[metodo_pago_id],references:[metodopago_id], onDelete: Cascade)
+  metodo_pago_id               Int
+  forma_pago                   Formasdepago @relation(fields:[forma_pago_id],references:[forma_pago_id], onDelete: Cascade)
+  forma_pago_id                Int
+  uso_cfdi                     Cfdi @relation(fields:[uso_cfdi_id],references:[cfdi_id], onDelete: Cascade)
+  uso_cfdi_id                  Int
+  regimen_fiscal               Regimen @relation(fields:[regimen_fiscal_id],references:[regimen_id], onDelete: Cascade)
+  regimen_fiscal_id            Int
+  operacion                    Clientes @relation(fields:[operacion_id],references:[operacion_id], onDelete: Cascade)
+  operacion_id                 String
+  concepto                     String
+}
+
+model Movimientos{
+  movimiento_id         Int @id@default(autoincrement())
+  fecha                 String
+  concepto              String
+  referencia            String
+  monto                 Float
+  tipo_cambio           Float
+  emisor                Emisores @relation(fields:[emisor_id],references:[emisor_id], onDelete: Cascade)
+  emisor_id             Int
+  moneda                Monedas @relation(fields:[moneda_id],references:[moneda_id], onDelete: Cascade)
+  moneda_id             Int
+  forma_pago            Formasdepago @relation(fields:[forma_pago_id],references:[forma_pago_id], onDelete: Cascade)
+  forma_pago_id         Int
+  status                Status @relation(fields:[status_id],references:[status_id], onDelete: Cascade)
+  status_id             Int
+}
+
+model Condiciondepago{
+  condicion_pago_id                 Int @id@default(autoincrement())
+  condicion_pago_nombre             String
+  condicion_pago_dias_para_vencer   Int
+  idioma                            Idioma @relation(fields:[idioma_id],references:[idioma_id], onDelete: Cascade)
+  idioma_id                         Int
+  condicion_pago_status             String
+}
+
+
+model Anexoclientespagos{
+  anexo_pago_id             Int      @id@default(autoincrement())
+  fechadeconfirmacion       String?
+  observacionesalconfirmar  String?
+  operacion                 Clientes  @relation(fields:[operacion_id],references:[operacion_id], onDelete: Cascade)
+  operacion_id              String
+}
+
+model Anexoclientesfondos{
+  anexo_clientes_id         Int       @id@default(autoincrement())
+  observaciones             String?
+  cuentabancaria            String?
+  fechadeingreso            String?
+  montoregistrado           Float
+  operacion                 Clientes  @relation(fields:[operacion_id],references:[operacion_id], onDelete: Cascade)
+  operacion_id              String
+}
+
+

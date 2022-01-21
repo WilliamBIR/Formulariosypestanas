@@ -1,0 +1,22 @@
+export const listacomprobantes=[
+    {
+        tipocomprobante_clave:'I',
+        tipocomprobante_descripcion:'Ingreso'
+    },
+    {
+        tipocomprobante_clave:'E',
+        tipocomprobante_descripcion:'Egreso'
+    },
+    {
+        tipocomprobante_clave:'T',
+        tipocomprobante_descripcion:'Traslado'
+    },
+    {
+        tipocomprobante_clave:'N',
+        tipocomprobante_descripcion:'Nómina'
+    },
+    {
+        tipocomprobante_clave:'P',
+        tipocomprobante_descripcion:'Pago'
+    },
+]
